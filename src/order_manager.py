@@ -1,6 +1,7 @@
 from src.users import MANAGER, JUNIOR_MANAGER, PermissionDenied
 from datetime import datetime
 from src.order import Order
+from src.algorithms import merge_sort, linear_search
 
 DATE_FORMATS = ["%m-%d-%y", "%m-%d-%Y", "%Y-%m-%d"]
 
@@ -169,3 +170,18 @@ class OrderManager:
             if str(getattr(order, field)).strip().lower() == target:
                 results.append(order)
         return results
+
+    SORT_FIELDS = ("date", "amount", "qty")
+
+    def sort_orders(self, user, field, descending=False):
+        """Return a new sorted list. Uses our stable merge sort, so sorting
+        by Date and then by another field keeps earlier ordering for ties."""
+        self._require(user, self.READ_ROLES)
+        if field not in self.SORT_FIELDS:
+            raise ValueError(f"Cannot sort by '{field}'. Choose from {self.SORT_FIELDS}.")
+        return merge_sort(self._orders, key=lambda o: getattr(o, field), reverse=descending)
+
+    def find_cancelled(self, user):
+        """Linear search for every order with Status 'Cancelled'."""
+        self._require(user, self.READ_ROLES)
+        return linear_search(self._orders, lambda o: o.status == "Cancelled")
