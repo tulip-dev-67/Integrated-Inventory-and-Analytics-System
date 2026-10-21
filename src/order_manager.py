@@ -1,3 +1,4 @@
+from src.users import MANAGER, JUNIOR_MANAGER, PermissionDenied
 from datetime import datetime
 from src.order import Order
 
@@ -113,3 +114,58 @@ class OrderManager:
 
     def __len__(self):
         return len(self._orders)
+
+    READ_ROLES = (MANAGER, JUNIOR_MANAGER)
+    WRITE_ROLES = (MANAGER,)
+    EDITABLE_FIELDS = ("status", "qty", "amount", "date", "courier_status",
+                       "ship_city", "ship_state")
+    SEARCH_FIELDS = ("order_id", "status", "category", "ship_city")
+
+    def _require(self, user, allowed_roles):
+        """Every public operation calls this first."""
+        if user is None:
+            raise PermissionDenied("Login required.")
+        if user.role not in allowed_roles:
+            raise PermissionDenied(f"{user.role} is not allowed to perform this action.")
+
+    def _find_by_index(self, index):
+        for order in self._orders:
+            if order.index == str(index):
+                return order
+        return None
+
+    def add_order(self, user, order):
+        self._require(user, self.WRITE_ROLES)
+        if self._find_by_index(order.index) is not None:
+            raise ValueError(f"An order with index {order.index} already exists.")
+        self._orders.append(order)
+
+    def edit_order(self, user, index, **changes):
+        self._require(user, self.WRITE_ROLES)
+        order = self._find_by_index(index)
+        if order is None:
+            raise ValueError(f"No order with index {index}.")
+        for field in changes:
+            if field not in self.EDITABLE_FIELDS:
+                raise ValueError(f"Field '{field}' cannot be edited.")
+        for field, value in changes.items():
+            setattr(order, field, value)
+
+    def delete_order(self, user, index):
+        self._require(user, self.WRITE_ROLES)
+        order = self._find_by_index(index)
+        if order is None:
+            raise ValueError(f"No order with index {index}.")
+        self._orders.remove(order)
+
+    def search_orders(self, user, field, value):
+        """Linear search; we replace this with a hash index later."""
+        self._require(user, self.READ_ROLES)
+        if field not in self.SEARCH_FIELDS:
+            raise ValueError(f"Cannot search by '{field}'. Choose from {self.SEARCH_FIELDS}.")
+        target = str(value).strip().lower()
+        results = []
+        for order in self._orders:
+            if str(getattr(order, field)).strip().lower() == target:
+                results.append(order)
+        return results
