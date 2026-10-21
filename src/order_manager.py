@@ -2,6 +2,7 @@ from src.users import MANAGER, JUNIOR_MANAGER, PermissionDenied
 from datetime import datetime
 from src.order import Order
 from src.algorithms import merge_sort, linear_search
+from src.analysis import AnalysisMixin
 
 DATE_FORMATS = ["%m-%d-%y", "%m-%d-%Y", "%Y-%m-%d"]
 
@@ -42,7 +43,7 @@ def parse_date(text):
     raise ValueError(f"unrecognised date '{text}'")
 
 
-class OrderManager:
+class OrderManager(AnalysisMixin):
     def __init__(self):
         self._orders = []
         self.skipped = []   # (line number, reason)
