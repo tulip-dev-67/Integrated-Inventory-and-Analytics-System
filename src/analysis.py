@@ -79,3 +79,8 @@ class AnalysisMixin:
         self._require(user, self.READ_ROLES)
         totals = self._totals_by("order_id", "amount")
         return heap_top_n(list(totals.items()), n, key=lambda pair: pair[1])
+
+    def totals_by_group(self, user, group_attr, value_attr):
+        """Public wrapper: {group: total} over non-cancelled orders."""
+        self._require(user, self.READ_ROLES)
+        return self._totals_by(group_attr, value_attr)
