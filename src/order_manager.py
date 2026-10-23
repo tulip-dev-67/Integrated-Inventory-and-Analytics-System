@@ -4,6 +4,7 @@ from src.order import Order
 from src.algorithms import merge_sort, linear_search
 from src.analysis import AnalysisMixin
 from src.analysis_advanced import AdvancedAnalysisMixin
+from src.indexing import IndexMixin
 
 DATE_FORMATS = ["%m-%d-%y", "%m-%d-%Y", "%Y-%m-%d"]
 
@@ -43,7 +44,7 @@ def parse_date(text):
             continue
     raise ValueError(f"unrecognised date '{text}'")
 
-class OrderManager(AnalysisMixin, AdvancedAnalysisMixin):
+class OrderManager(AnalysisMixin, AdvancedAnalysisMixin, IndexMixin):
     def __init__(self):
         self._orders = []
         self.skipped = []   # (line number, reason)
@@ -114,6 +115,8 @@ class OrderManager(AnalysisMixin, AdvancedAnalysisMixin):
                 b2b=row[col["B2B"]], fulfilled_by=row[col["fulfilled-by"]],
             ))
 
+            self._invalidate_indexes()
+
     def __len__(self):
         return len(self._orders)
 
@@ -152,6 +155,8 @@ class OrderManager(AnalysisMixin, AdvancedAnalysisMixin):
                 raise ValueError(f"Field '{field}' cannot be edited.")
         for field, value in changes.items():
             setattr(order, field, value)
+            self._invalidate_indexes()
+
 
     def delete_order(self, user, index):
         self._require(user, self.WRITE_ROLES)
@@ -159,6 +164,7 @@ class OrderManager(AnalysisMixin, AdvancedAnalysisMixin):
         if order is None:
             raise ValueError(f"No order with index {index}.")
         self._orders.remove(order)
+        self._invalidate_indexes()
 
     def search_orders(self, user, field, value):
         """Linear search; we replace this with a hash index later."""
