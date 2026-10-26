@@ -50,7 +50,7 @@ The system loads the Amazon Sale Report into memory as `Order` objects, controls
 - **Missing or invalid Qty, or a malformed date:** the row is skipped and recorded with its line number and the reason.
 - **Date format:** several formats are tried in turn (`mm-dd-yy`, `mm-dd-yyyy`, `yyyy-mm-dd`).
 - **Date coverage:** the data runs from 2022-03-31 to 2022-06-29, about three months and not the full year the brief describes. March contains a single day.
-- **Skip log test:** TODO: describe the test with deliberately broken rows (the real file produced no skips, so this shows the logging works).
+- **Skip-log test:** the real file produced no skipped rows, so `test_skiplog.py` builds a small file from one real row plus seven deliberately broken ones. Result: 2 loaded, 6 skipped, 1 repaired, with a logged line number and reason for each: an impossible date (`13-45-22`), a non-date (`not a date`), a non-numeric Qty, a missing Qty, a non-numeric Amount, and a row with too few columns. The row with a missing Amount is kept with Amount 0.0 and logged as repaired. A missing file raises a clear "Data file not found" error instead of crashing.
 
 ---
 
@@ -65,7 +65,59 @@ The system loads the Amazon Sale Report into memory as `Order` objects, controls
 
 ## 4. Analysis results
 
-TODO: paste the main numbers from `test_analysis.py`: top 5 SKUs by amount and by quantity, totals for a chosen city and state, orders per status, total amount and quantity per category, and the top 5 orders by value.
+Sales figures exclude cancelled orders (see section 3).
+
+**Top products (by SKU).**
+
+| Rank | By amount | Total (INR) | By quantity | Units |
+|---|---|---|---|---|
+| 1 | J0230-SKD-M | 483,611 | JNE3797-KR-L | 647 |
+| 2 | JNE3797-KR-L | 470,083 | JNE3797-KR-M | 555 |
+| 3 | J0230-SKD-S | 448,825 | JNE3797-KR-S | 489 |
+| 4 | JNE3797-KR-M | 403,850 | JNE3405-KR-L | 452 |
+| 5 | JNE3797-KR-S | 360,194 | J0230-SKD-M | 435 |
+
+Because a SKU is one size of one style, the same styles appear several times (JNE3797 in sizes L, M and S; J0230 in M and S). Grouping by Style instead would combine these sizes into single, larger products.
+
+**Sales by location.** MUMBAI: 3,954,578 INR. MAHARASHTRA: 12,224,770 INR. Mumbai alone accounts for about 32% of Maharashtra's sales.
+
+**Orders per status** (128,975 order lines in total):
+
+| Status | Lines |
+|---|---|
+| Shipped | 77,804 |
+| Shipped - Delivered to Buyer | 28,769 |
+| Cancelled | 18,332 |
+| Shipped - Returned to Seller | 1,953 |
+| Shipped - Picked Up | 973 |
+| Pending | 658 |
+| Pending - Waiting for Pick Up | 281 |
+| Shipped - Returning to Seller | 145 |
+| Shipped - Out for Delivery | 35 |
+| Shipped - Rejected by Buyer | 11 |
+| Shipping | 8 |
+| Shipped - Lost in Transit | 5 |
+| Shipped - Damaged | 1 |
+
+The counts add up to 128,975, matching the rows loaded. About 60% of lines are Shipped and 14.2% are Cancelled. The cancellation analysis (section 4.2) finds 18,427 cancelled lines because it also counts those whose Courier Status mentions cancellation, 95 more than Status alone.
+
+**Category totals.**
+
+| Category | Amount (INR) | Qty |
+|---|---|---|
+| Set | 35,731,673 | 43,033 |
+| kurta | 19,425,870 | 42,792 |
+| Western Dress | 10,209,590 | 13,418 |
+| Top | 4,904,066 | 9,368 |
+| Ethnic Dress | 732,744 | 1,016 |
+| Blouse | 418,389 | 831 |
+| Bottom | 135,453 | 384 |
+| Saree | 114,694 | 147 |
+| Dupatta | 915 | 3 |
+
+Set generates about 50% of all sales and kurta about 27%. Kurta sells almost as many units as Set (42,792 against 43,033) but earns far less, so Set items have a much higher price per unit. As a check, the category amounts sum to 71,673,394 and the quantities to 110,992, identical to the monthly totals in section 4.3, so two independent calculations agree.
+
+**Order value.** There are 103,193 unique Order IDs across 128,975 lines (about 1.25 lines per order). The five highest-value orders are 408-3363121-6123562 (8,636), 405-8750647-4224357 (8,081), 403-4288285-8521928 (6,993), 404-9932919-6662730 (6,832) and 408-3317403-1729937 (6,680).
 
 ### 4.1 Order value and why CLV cannot be computed (item 5)
 
