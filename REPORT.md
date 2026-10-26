@@ -195,9 +195,14 @@ TODO: add one or two sentences of observation per chart after looking at the ima
 
 ## 7. Interface
 
-TODO: describe the CLI once it is built (login, role-based menu, results, and the summary of skipped and repaired rows shown after loading).
+A command-line interface (`main.py`, code in `src/cli.py`) provides:
 
----
+- **Loading:** reads the CSV at start-up and prints how many rows were loaded, skipped and repaired, with the first few reasons.
+- **Login:** username and password, with three attempts. The same message is shown for a wrong username and a wrong password.
+- **Role-based menu:** every user sees search, sort, analyses, charts and the loading summary. Only a Manager also sees add, edit and delete, so a Junior Manager is never offered an action they cannot perform. The permission check inside `OrderManager` still applies even if the menu were bypassed.
+- **Searches use the structures from item 10:** Order ID uses binary search, ship-city uses the hash index, and Status and Category use linear search.
+- **Input validation:** whole numbers and decimals are checked, empty values are rejected, and any error is reported as a clear message instead of crashing the program.
+- **Delete confirmation:** a Manager must confirm before an order is removed.
 
 ## 8. How to run
 
